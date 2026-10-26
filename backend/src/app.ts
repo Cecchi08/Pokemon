@@ -15,7 +15,13 @@ export const app = express();
 
 app.disable('x-powered-by');
 app.use(helmet());
-app.use(cors({ origin: env.WEB_ORIGIN }));
+app.use(cors({
+	origin: (origin, callback) => {
+		const localDevelopmentOrigin = env.NODE_ENV !== 'production' && origin !== undefined &&
+			/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+		callback(null, !origin || origin === env.WEB_ORIGIN || localDevelopmentOrigin);
+	},
+}));
 app.use(express.json({ limit: '32kb' }));
 app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: 'draft-7', legacyHeaders: false }));
